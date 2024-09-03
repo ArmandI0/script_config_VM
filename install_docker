@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Mettre à jour les packages existants
+sudo apt-get update
+
+# Installer les packages nécessaires
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+
+# Ajouter la clé GPG officielle de Docker
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+# Ajouter le repository Docker
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+# Mettre à jour les packages
+sudo apt-get update
+
+# Installer Docker
+sudo apt-get install -y docker-ce
+
+# Télécharger Docker Compose
+VERSION="1.29.2"
+sudo curl -L "https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+# Appliquer les permissions d'exécution
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Vérifier l'installation de Docker Compose
+docker-compose --version
+
+# Ajouter l'utilisateur au groupe Docker
+sudo usermod -aG docker $USER
+
+echo "Installation terminée. Veuillez vous déconnecter et vous reconnecter pour appliquer les changements de groupe."
+

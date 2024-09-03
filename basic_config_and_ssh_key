@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Vérifie si l'utilisateur est root
+if [ "$EUID" -eq 0 ]; then
+  echo "Veuillez exécuter ce script en tant qu'utilisateur normal, pas root."
+  exit 1
+fi
+
+# Fonction pour exécuter des commandes avec sudo si nécessaire
+run_as_root() {
+  sudo "$@"
+}
+
+# Mise à jour de la liste des paquets
+run_as_root apt-get update
+
+# Installation des outils requis
+run_as_root apt-get install -y software-properties-common apt-transport-https wget curl zsh dbus-x11
+
+# Installation de Visual Studio Code
+wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg
+sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list'
+run_as_root apt-get update
+run_as_root apt-get install -y code
+
+# Installation de Discord
+wget -O /tmp/discord.deb "https://discord.com/api/download?platform=linux&format=deb"
+run_as_root apt-get install -y /tmp/discord.deb
+rm /tmp/discord.deb
+
+# Application du thème sombre GNOME
+gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-dark'
+gsettings set org.gnome.desktop.interface icon-theme 'Yaru-dark'
+
+# Installation de Oh My Zsh
+echo "Installation de Oh My Zsh..."
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+# Définir Zsh comme le shell par défaut
+chsh -s "$(which zsh)"
+echo "Oh My Zsh installé et Zsh défini comme shell par défaut."
+
+# Génération d'une nouvelle clé SSH
+echo "Génération d'une nouvelle clé SSH..."
+ssh-keygen -t ed25519 -C "aanger3@gmail.com" -f ~/.ssh/id_ed25519 -N ""
+
+# Afficher la clé publique
+echo "Voici votre clé SSH publique:"
+cat ~/.ssh/id_ed25519.pub
+
+# Ajouter la clé SSH à GitHub
+read -p "Souhaitez-vous ajouter la clé SSH à votre compte GitHub automatiquement? (o/n): " add_to_github
+
+if [[ "$add_to_github" == "o" || "$add_to_github" == "O" ]]; then
+  read -p "Entrez votre nom d'utilisateur GitHub: " github_username
+  read -p "Entrez votre token GitHub: " github_token
+  echo
+
+  ssh_key=$(cat ~/.ssh/id_ed25519.pub)
+  curl -u "$github_username:$github_token" \
+       --data "{\"title\":\"$(hostname) $(date)\",\"key\":\"$ssh_key\"}" \
+       https://api.github.com/user/keys
+
+  echo "Clé SSH ajoutée à votre compte GitHub."
+fi
+
+echo "Installation terminée avec succès!"
