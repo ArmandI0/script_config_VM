@@ -54,14 +54,29 @@ read -p "Souhaitez-vous ajouter la clé SSH à votre compte GitHub automatiqueme
 if [[ "$add_to_github" == "o" || "$add_to_github" == "O" ]]; then
   read -p "Entrez votre nom d'utilisateur GitHub: " github_username
   read -p "Entrez votre token GitHub: " github_token
-  echo
 
+  if [ -z "$github_token" ] || [ -z "$github_username" ]; then
+    echo "Vous devez fournir un token GitHub pour continuer."
+    exit 1
+  fi
   ssh_key=$(cat ~/.ssh/id_ed25519.pub)
   curl -u "$github_username:$github_token" \
        --data "{\"title\":\"$(hostname) $(date)\",\"key\":\"$ssh_key\"}" \
        https://api.github.com/user/keys
 
   echo "Clé SSH ajoutée à votre compte GitHub."
+fi
+
+read -p "Souhaitez vous ajouter la clé SSH à votre Intra ? (o/n):" add_to_intra
+if [[ "$add_to_github" == "o" || "$add_to_github" == "O" ]]; then
+    if [-x "$(command -v firefox)" ]; then
+        firefox https://profile.intra.42.fr/gitlab_users &
+    fi
+fi
+
+read -p "Souhaitez vous installez docker ? (o/n)"
+if [[ "$add_to_github" == "o" || "$add_to_github" == "O" ]]; then
+    bash install_docker
 fi
 
 echo "Installation terminée avec succès!"
