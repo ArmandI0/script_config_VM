@@ -81,7 +81,7 @@ fi
 
 read -p "Souhaitez vous installez docker ? (o/n)" install_docker
 if [[ "$install_docker" == "o" || "$install_docker" == "O" ]]; then
-    wget -O install_docker https://github.com/Haletran/script_config_VM/blob/main/install_docker
+    wget -O install_docker https://raw.githubusercontent.com/Haletran/script_config_VM/main/install_docker
     chmod +x install_docker
     run_as_root bash install_docker
 fi
