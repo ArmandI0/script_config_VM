@@ -12,33 +12,42 @@ run_as_root() {
 }
 
 # Mise à jour de la liste des paquets
-run_as_root apt-get update && run_as_root apt-get upgrade -y
+echo "Mise à jour de la liste des paquets..."
+run_as_root apt-get update > /dev/null && run_as_root apt-get upgrade -y > /dev/null
 
 # Installation des outils requis
-run_as_root apt-get install -y software-properties-common apt-transport-https wget curl zsh dbus-x11 git
-
-# Installation de Visual Studio Code
-wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg
-sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" | sudo tee /etc/apt/sources.list.d/vscode.list'
-run_as_root apt-get update
-run_as_root apt-get install -y code
+echo "Installation des outils requis..."
+run_as_root apt-get install -y software-properties-common apt-transport-https wget curl zsh dbus-x11 git > /dev/null
 
 # Installation de Discord
-wget -O /tmp/discord.deb "https://discord.com/api/download?platform=linux&format=deb"
-run_as_root apt-get install -y /tmp/discord.deb
+echo "Installation de Discord..."
+wget -O /tmp/discord.deb "https://discord.com/api/download?platform=linux&format=deb" > /dev/null
+run_as_root apt-get install -y /tmp/discord.deb > /dev/null
 rm /tmp/discord.deb
 
 # Application du thème sombre GNOME
-gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-dark'
-gsettings set org.gnome.desktop.interface icon-theme 'Yaru-dark'
+echo "Application du thème sombre GNOME..."
+gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-dark' > /dev/null
+gsettings set org.gnome.desktop.interface icon-theme 'Yaru-dark' > /dev/null
 
 # Installation de Oh My Zsh
 echo "Installation de Oh My Zsh..."
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 
 # Définir Zsh comme le shell par défaut
-chsh -s "$(which zsh)"
+chsh -s "$(which zsh)" > /dev/null
 echo "Oh My Zsh installé et Zsh défini comme shell par défaut."
+
+# Installation de Visual Studio Code
+echo "Installation de Visual Studio Code..."
+current_dir=$(pwd)
+wget --user-agent=Mozilla --content-disposition -E -c "https://code.visualstudio.com/sha/download?build=stable&os=linux-x64" > /dev/null
+chmod 777 code-stable-x64-*.tar.gz > /dev/null
+tar -xzf code-stable-x64-*.tar.gz > /dev/null
+rm code-stable-x64-*.tar.gz > /dev/null
+echo "alias code=\"${current_dir}/VSCode-linux-x64/bin/code --no-sandbox\"" >> ~/.zshrc > /dev/null
+source ~/.zshrc
+
 
 # Génération d'une nouvelle clé SSH
 echo "Génération d'une nouvelle clé SSH..."
@@ -81,7 +90,8 @@ fi
 
 read -p "Souhaitez vous installez docker ? (o/n)" install_docker
 if [[ "$install_docker" == "o" || "$install_docker" == "O" ]]; then
-    wget -O install_docker https://raw.githubusercontent.com/Haletran/script_config_VM/main/install_docker
+    echo "Installation de Docker..."
+    wget -O install_docker https://raw.githubusercontent.com/Haletran/script_config_VM/main/install_docker > /dev/null
     chmod +x install_docker
     run_as_root bash install_docker
 fi
