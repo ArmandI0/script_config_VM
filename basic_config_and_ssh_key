@@ -72,15 +72,16 @@ if [[ "$add_to_github" == "o" || "$add_to_github" == "O" ]]; then
   echo "Clé SSH ajoutée à votre compte GitHub."
 fi
 
+{{REWRITTEN_CODE}}
 read -p "Souhaitez vous ajouter la clé SSH à votre Intra ? (o/n):" add_to_intra
-if [[ "$add_to_github" == "o" || "$add_to_github" == "O" ]]; then
-    if [-x "$(command -v firefox)" ]; then
+if [[ "$add_to_intra" == "o" || "$add_to_intra" == "O" ]]; then
+    if [ -x "$(command -v firefox)" ]; then
         firefox https://profile.intra.42.fr/gitlab_users &
     fi
 fi
 
-read -p "Souhaitez vous installez docker ? (o/n)"
-if [[ "$add_to_github" == "o" || "$add_to_github" == "O" ]]; then
+read -p "Souhaitez vous installez docker ? (o/n)" install_docker
+if [[ "$install_docker" == "o" || "$install_docker" == "O" ]]; then
     run_as_root bash install_docker
 fi
 
