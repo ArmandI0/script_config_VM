@@ -53,8 +53,6 @@ chmod 777 code-stable-x64-*.tar.gz > /dev/null
 tar -xzf code-stable-x64-*.tar.gz &> /dev/null
 rm code-stable-x64-*.tar.gz > /dev/null
 echo "alias code=\"${current_dir}/VSCode-linux-x64/bin/code --no-sandbox\"" >> ~/.zshrc
-source ~/.zshrc
-
 
 # Génération d'une nouvelle clé SSH
 echo "Génération d'une nouvelle clé SSH..."
