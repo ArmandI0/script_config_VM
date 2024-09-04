@@ -1,8 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# Color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
 # Vérifie si l'utilisateur est root
-if [ "$EUID" -eq 0 ]; then
-  echo "Veuillez exécuter ce script en tant qu'utilisateur normal, pas root."
+if [[ "$EUID" -eq 0 ]]; then
+  echo -e "${RED}Veuillez exécuter ce script en tant qu'utilisateur normal, pas root.${NC}"
   exit 1
 fi
 
@@ -12,93 +19,143 @@ run_as_root() {
 }
 
 # Mise à jour de la liste des paquets
-echo "Mise à jour de la liste des paquets..."
-run_as_root apt-get update > /dev/null && run_as_root apt-get upgrade -y > /dev/null
+echo -e "${BLUE}Mise à jour de la liste des paquets...${NC}"
+if ! run_as_root apt-get update > /dev/null; then
+  echo -e "${RED}Échec de la mise à jour de la liste des paquets.${NC}"
+  exit 1
+fi
+
+if ! run_as_root apt-get upgrade -y > /dev/null; then
+  echo -e "${RED}Échec de la mise à niveau des paquets.${NC}"
+  exit 1
+fi
 
 # Installation des outils requis
-echo "Installation des outils requis..."
-run_as_root apt-get install -y software-properties-common apt-transport-https wget curl zsh dbus-x11 git > /dev/null
+echo -e "${BLUE}Installation des outils requis...${NC}"
+packages=(software-properties-common apt-transport-https wget curl zsh dbus-x11 git)
+for package in "${packages[@]}"; do
+  if ! run_as_root apt-get install -y "$package" > /dev/null; then
+    echo -e "${RED}Échec de l'installation du paquet: $package${NC}"
+    exit 1
+  fi
+done
 
 # Installation de Discord
-echo "Installation de Discord..."
-wget -O /tmp/discord.deb "https://discord.com/api/download?platform=linux&format=deb" &> /dev/null
-run_as_root apt-get install -y /tmp/discord.deb &> /dev/null
+echo -e "${BLUE}Installation de Discord...${NC}"
+if ! wget -O /tmp/discord.deb "https://discord.com/api/download?platform=linux&format=deb" &> /dev/null; then
+  echo -e "${RED}Échec du téléchargement de Discord.${NC}"
+  exit 1
+fi
+
+if ! run_as_root apt-get install -y /tmp/discord.deb &> /dev/null; then
+  echo -e "${RED}Échec de l'installation de Discord.${NC}"
+  rm /tmp/discord.deb
+  exit 1
+fi
 rm /tmp/discord.deb
 
 # Application du thème sombre GNOME
-echo "Application du thème sombre GNOME..."
+echo -e "${BLUE}Application du thème sombre GNOME...${NC}"
 gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-dark' > /dev/null
 gsettings set org.gnome.desktop.interface icon-theme 'Yaru-dark' > /dev/null
 
 # Installation de Oh My Zsh
-echo "Installation de Oh My Zsh..."
-if [ -d "$HOME/.oh-my-zsh" ]; then
-  echo "Oh My Zsh est déjà installé."
+echo -e "${BLUE}Installation de Oh My Zsh...${NC}"
+if [[ -d "$HOME/.oh-my-zsh" ]]; then
+  echo -e "${YELLOW}Oh My Zsh est déjà installé.${NC}"
 else
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  if ! sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended; then
+    echo -e "${RED}Échec de l'installation de Oh My Zsh.${NC}"
+    exit 1
+  fi
 fi
+
 # Définir Zsh comme le shell par défaut
-if [ "$SHELL" == "/usr/bin/zsh" ]; then
-  echo "Zsh est déjà défini comme shell par défaut."
-else
-  chsh -s "$(which zsh)" > /dev/null
-  echo "Oh My Zsh installé et Zsh défini comme shell par défaut."
+if [[ "$SHELL" != "/usr/bin/zsh" ]]; then
+  if ! chsh -s "$(which zsh)" > /dev/null; then
+    echo -e "${RED}Échec de la définition de Zsh comme shell par défaut.${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}Oh My Zsh installé et Zsh défini comme shell par défaut.${NC}"
 fi
 
 # Installation de Visual Studio Code
-echo "Installation de Visual Studio Code..."
+echo -e "${BLUE}Installation de Visual Studio Code...${NC}"
 current_dir=$(pwd)
-wget --user-agent=Mozilla --content-disposition -E -c "https://code.visualstudio.com/sha/download?build=stable&os=linux-x64" &> /dev/null
-chmod 777 code-stable-x64-*.tar.gz > /dev/null
-tar -xzf code-stable-x64-*.tar.gz &> /dev/null
-rm code-stable-x64-*.tar.gz > /dev/null
-echo "alias code=\"${current_dir}/VSCode-linux-x64/bin/code --no-sandbox\"" >> ~/.zshrc
-
-# Génération d'une nouvelle clé SSH
-echo "Génération d'une nouvelle clé SSH..."
-read -p "Entrez votre adresse e-mail utilise sur Github : " EMAIL
-if [ -z "$EMAIL" ]; then
-  echo "Vous devez fournir une adresse e-mail pour générer une clé SSH."
+if wget --user-agent=Mozilla --content-disposition -E -c "https://code.visualstudio.com/sha/download?build=stable&os=linux-x64" &> /dev/null; then
+  chmod 777 code-stable-x64-*.tar.gz > /dev/null
+  tar -xzf code-stable-x64-*.tar.gz > /dev/null
+  rm code-stable-x64-*.tar.gz > /dev/null
+  echo "alias code=\"${current_dir}/VSCode-linux-x64/bin/code --no-sandbox\"" >> ~/.zshrc
+else
+  echo -e "${RED}Échec du téléchargement de Visual Studio Code.${NC}"
   exit 1
 fi
-ssh-keygen -t ed25519 -C $EMAIL -f ~/.ssh/id_ed25519 -N ""
+
+# Génération d'une nouvelle clé SSH
+echo -e "${BLUE}Génération d'une nouvelle clé SSH...${NC}"
+read -p "Entrez votre adresse e-mail utilisée sur Github : " EMAIL
+if [[ -z "$EMAIL" ]]; then
+  echo -e "${RED}Vous devez fournir une adresse e-mail pour générer une clé SSH.${NC}"
+  exit 1
+fi
+
+if ! ssh-keygen -t ed25519 -C "$EMAIL" -f ~/.ssh/id_ed25519 -N ""; then
+  echo -e "${RED}Échec de la génération de la clé SSH.${NC}"
+  exit 1
+fi
 
 # Afficher la clé publique
-echo "Voici votre clé SSH publique:"
-cat ~/.ssh/id_ed25519.pub
+echo -e "${GREEN}Voici votre clé SSH publique:${NC}"
+while IFS= read -r line; do
+  echo "$line"
+done < ~/.ssh/id_ed25519.pub
 
 # Ajouter la clé SSH à GitHub
 read -p "Souhaitez-vous ajouter la clé SSH à votre compte GitHub automatiquement? (o/n): " add_to_github
-
 if [[ "$add_to_github" == "o" || "$add_to_github" == "O" ]]; then
   read -p "Entrez votre nom d'utilisateur GitHub: " github_username
   read -p "Entrez votre token GitHub: " github_token
 
-  if [ -z "$github_token" ] || [ -z "$github_username" ]; then
-    echo "Vous devez fournir un token GitHub pour continuer."
+  if [[ -z "$github_token" || -z "$github_username" ]]; then
+    echo -e "${RED}Vous devez fournir un token GitHub pour continuer.${NC}"
     exit 1
   fi
-  ssh_key=$(cat ~/.ssh/id_ed25519.pub)
-  curl -u "$github_username:$github_token" \
+
+  ssh_key=$(<~/.ssh/id_ed25519.pub)
+  if ! curl -u "$github_username:$github_token" \
        --data "{\"title\":\"$(hostname) $(date)\",\"key\":\"$ssh_key\"}" \
-       https://api.github.com/user/keys
-
-  echo "Clé SSH ajoutée à votre compte GitHub."
+       https://api.github.com/user/keys; then
+    echo -e "${RED}Échec de l'ajout de la clé SSH à votre compte GitHub.${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}Clé SSH ajoutée à votre compte GitHub.${NC}"
 fi
 
-read -p "Souhaitez vous ajouter la clé SSH à votre Intra ? (o/n):" add_to_intra
+# Ajouter la clé SSH à l'Intranet 42
+read -p "Souhaitez-vous ajouter la clé SSH à votre Intra ? (o/n): " add_to_intra
 if [[ "$add_to_intra" == "o" || "$add_to_intra" == "O" ]]; then
-    if [ -x "$(command -v firefox)" ]; then
-        firefox https://profile.intra.42.fr/gitlab_users &
-    fi
+  if command -v firefox &> /dev/null; then
+    firefox https://profile.intra.42.fr/gitlab_users &
+  else
+    echo -e "${RED}Firefox n'est pas installé.${NC}"
+  fi
 fi
 
-read -p "Souhaitez vous installez docker ? (o/n)" install_docker
+# Installation de Docker
+read -p "Souhaitez-vous installer Docker ? (o/n): " install_docker
 if [[ "$install_docker" == "o" || "$install_docker" == "O" ]]; then
-    echo "Installation de Docker..."
-    wget -O install_docker https://raw.githubusercontent.com/Haletran/script_config_VM/main/install_docker &> /dev/null
+  echo -e "${BLUE}Installation de Docker...${NC}"
+  if wget -O install_docker https://raw.githubusercontent.com/Haletran/script_config_VM/main/install_docker &> /dev/null; then
     chmod +x install_docker
-    run_as_root bash install_docker
+    if ! run_as_root bash install_docker; then
+      echo -e "${RED}Échec de l'installation de Docker.${NC}"
+      exit 1
+    fi
+  else
+    echo -e "${RED}Échec du téléchargement du script d'installation de Docker.${NC}"
+    exit 1
+  fi
 fi
 
-echo "Installation terminée avec succès!"
+echo -e "${GREEN}Installation terminée avec succès!${NC}"
