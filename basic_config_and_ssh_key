@@ -12,10 +12,10 @@ run_as_root() {
 }
 
 # Mise à jour de la liste des paquets
-run_as_root apt-get update
+run_as_root apt-get update && run_as_root apt-get upgrade -y
 
 # Installation des outils requis
-run_as_root apt-get install -y software-properties-common apt-transport-https wget curl zsh dbus-x11
+run_as_root apt-get install -y software-properties-common apt-transport-https wget curl zsh dbus-x11 git
 
 # Installation de Visual Studio Code
 wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg
@@ -42,7 +42,12 @@ echo "Oh My Zsh installé et Zsh défini comme shell par défaut."
 
 # Génération d'une nouvelle clé SSH
 echo "Génération d'une nouvelle clé SSH..."
-ssh-keygen -t ed25519 -C "aanger3@gmail.com" -f ~/.ssh/id_ed25519 -N ""
+read -p "Entrez votre adresse e-mail utilise sur Github : " EMAIL
+if [ -z "$EMAIL" ]; then
+  echo "Vous devez fournir une adresse e-mail pour générer une clé SSH."
+  exit 1
+fi
+ssh-keygen -t ed25519 -C $EMAIL -f ~/.ssh/id_ed25519 -N ""
 
 # Afficher la clé publique
 echo "Voici votre clé SSH publique:"
@@ -76,7 +81,7 @@ fi
 
 read -p "Souhaitez vous installez docker ? (o/n)"
 if [[ "$add_to_github" == "o" || "$add_to_github" == "O" ]]; then
-    bash install_docker
+    run_as_root bash install_docker
 fi
 
 echo "Installation terminée avec succès!"
