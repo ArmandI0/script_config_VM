@@ -102,7 +102,6 @@ fi
 
 if ! ssh-keygen -t ed25519 -C "$EMAIL" -f ~/.ssh/id_ed25519 -N ""; then
   echo -e "${RED}Échec de la génération de la clé SSH.${NC}"
-  exit 1
 fi
 
 # Afficher la clé publique
