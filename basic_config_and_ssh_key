@@ -21,8 +21,8 @@ run_as_root apt-get install -y software-properties-common apt-transport-https wg
 
 # Installation de Discord
 echo "Installation de Discord..."
-wget -O /tmp/discord.deb "https://discord.com/api/download?platform=linux&format=deb" > /dev/null
-run_as_root apt-get install -y /tmp/discord.deb > /dev/null
+wget -O /tmp/discord.deb "https://discord.com/api/download?platform=linux&format=deb" &> /dev/null
+run_as_root apt-get install -y /tmp/discord.deb &> /dev/null
 rm /tmp/discord.deb
 
 # Application du thème sombre GNOME
@@ -32,20 +32,27 @@ gsettings set org.gnome.desktop.interface icon-theme 'Yaru-dark' > /dev/null
 
 # Installation de Oh My Zsh
 echo "Installation de Oh My Zsh..."
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
+if [ -d "$HOME/.oh-my-zsh" ]; then
+  echo "Oh My Zsh est déjà installé."
+else
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+fi
 # Définir Zsh comme le shell par défaut
-chsh -s "$(which zsh)" > /dev/null
-echo "Oh My Zsh installé et Zsh défini comme shell par défaut."
+if [ "$SHELL" == "/usr/bin/zsh" ]; then
+  echo "Zsh est déjà défini comme shell par défaut."
+else
+  chsh -s "$(which zsh)" > /dev/null
+  echo "Oh My Zsh installé et Zsh défini comme shell par défaut."
+fi
 
 # Installation de Visual Studio Code
 echo "Installation de Visual Studio Code..."
 current_dir=$(pwd)
-wget --user-agent=Mozilla --content-disposition -E -c "https://code.visualstudio.com/sha/download?build=stable&os=linux-x64" > /dev/null
+wget --user-agent=Mozilla --content-disposition -E -c "https://code.visualstudio.com/sha/download?build=stable&os=linux-x64" &> /dev/null
 chmod 777 code-stable-x64-*.tar.gz > /dev/null
-tar -xzf code-stable-x64-*.tar.gz > /dev/null
+tar -xzf code-stable-x64-*.tar.gz &> /dev/null
 rm code-stable-x64-*.tar.gz > /dev/null
-echo "alias code=\"${current_dir}/VSCode-linux-x64/bin/code --no-sandbox\"" >> ~/.zshrc > /dev/null
+echo "alias code=\"${current_dir}/VSCode-linux-x64/bin/code --no-sandbox\"" >> ~/.zshrc
 source ~/.zshrc
 
 
