@@ -1,5 +1,15 @@
 #!/bin/bash
 
+if [ "$EUID" -ne 0 ]
+  then echo "Veuillez exécuter ce script en tant qu'administrateur."
+  exit
+fi
+
+if [ -x "$(command -v docker)" ]; then
+    echo "Docker est déjà installé."
+    exit
+fi
+
 # Mettre à jour les packages existants
 sudo apt-get update
 
@@ -32,4 +42,3 @@ docker-compose --version
 sudo usermod -aG docker $USER
 
 echo "Installation terminée. Veuillez vous déconnecter et vous reconnecter pour appliquer les changements de groupe."
-
